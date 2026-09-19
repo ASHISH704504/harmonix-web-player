@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>[ HARMONIX // CYBER_DECK_WEB ]</title>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <div class="app">
+
+    <header class="header">
+      <div class="brand">
+        <span class="logo">[ HARMONIX // RETRO_DECK ]</span>
+        <span class="status">&#9679; AUDIO_ONLINE</span>
+      </div>
+      <div class="actions">
+        <input id="search" type="text" placeholder="&#128269; SEARCH_TRACKS..." autocomplete="off">
+        <button id="loadFiles" class="btn purple" type="button">[+ LOAD_FILES]</button>
+        <button id="loadFolder" class="btn card" type="button">[&#128193; LOAD_FOLDER]</button>
+        <input id="fileInput" type="file" accept="audio/*" multiple hidden>
+        <input id="folderInput" type="file" webkitdirectory multiple hidden>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="hero">
+        <div class="cover-wrap">
+          <canvas id="cover" width="270" height="190"></canvas>
+        </div>
+        <h2 id="heroTitle" class="hero-title">NO_TRACK_PLAYING</h2>
+        <p id="heroArtist" class="hero-artist">LOAD AUDIO TO START</p>
+        <div class="telemetry">
+          <span id="tBpm" class="chip cyan">[BPM: --]</span>
+          <span id="tFmt" class="chip amber">[STEREO --KBPS]</span>
+        </div>
+        <div class="viz-label">[ LIVE_SPECTRUM_ANALYZER ]</div>
+        <canvas id="spectrum" width="310" height="60"></canvas>
+      </section>
+
+      <section class="tracks">
+        <nav class="pills" id="pills">
+          <button class="pill active" data-view="ALL">&#9889; ALL_TRACKS</button>
+          <button class="pill" data-view="LIKED">&#128154; LIKED_TAPES</button>
+        </nav>
+        <div class="track-head">
+          <span class="th-title">TITLE &amp; ARTIST</span>
+          <span class="th-album">ALBUM</span>
+          <span class="th-time">TIME</span>
+        </div>
+        <div id="trackList" class="track-list"></div>
+      </section>
+    </main>
+
+    <footer class="player">
+      <div class="p-left">
+        <canvas id="miniCover" width="52" height="52"></canvas>
+        <div class="p-info">
+          <span id="miniTitle" class="mini-title">NO_AUDIO_PLAYING</span>
+          <span id="miniArtist" class="mini-artist">CYBER_DECK_WEB</span>
+        </div>
+        <button id="favBtn" class="icon-btn" type="button">&#129293;</button>
+      </div>
+      <div class="p-center">
+        <div class="btn-row">
+          <button id="shuffleBtn" class="icon-btn" type="button">&#128256;</button>
+          <button id="prevBtn" class="btn card" type="button">[&#9668;&#9668;]</button>
+          <button id="playBtn" class="btn purple play" type="button">[ &#9654; PLAY ]</button>
+          <button id="nextBtn" class="btn card" type="button">[NEXT &#9658;&#9658;]</button>
+          <button id="repeatBtn" class="icon-btn" type="button">&#128257;</button>
+        </div>
+        <div class="seek-row">
+          <span id="timeElapsed" class="time">00:00</span>
+          <input id="seek" type="range" min="0" max="1000" value="0">
+          <span id="timeTotal" class="time muted">00:00</span>
+        </div>
+      </div>
+      <div class="p-right">
+        <button id="muteBtn" class="icon-btn" type="button">&#128266;</button>
+        <input id="volume" type="range" min="0" max="1" step="0.01" value="0.7">
+      </div>
+    </footer>
+
+  </div>
+<script src="/static/js/script.js"></script>
+</body>
+</html>

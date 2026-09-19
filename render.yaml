@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: harmonix-web-player
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    healthCheckPath: /
