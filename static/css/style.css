@@ -70,6 +70,8 @@ input[type="text"]:focus { border-color: var(--purple); }
   padding: 9px 14px;
   border-radius: 8px;
   color: #fff;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .btn.purple { background: var(--purple); }
 .btn.purple:hover { background: var(--purple-hover); }
@@ -80,6 +82,11 @@ input[type="text"]:focus { border-color: var(--purple); }
 }
 .btn.card:hover { background: var(--card-hover); }
 .btn.disabled { opacity: 0.5; cursor: not-allowed; }
+
+button, .pill, .track-row, .heart, .icon-btn {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
 
 /* ---------- MAIN ---------- */
 .main {
@@ -204,12 +211,16 @@ input[type="text"]:focus { border-color: var(--purple); }
   align-items: center;
   gap: 12px;
   padding: 12px 20px;
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
 }
 .p-left, .p-right, .p-center { display: flex; align-items: center; gap: 10px; }
-#miniCover { width: 52px; height: 52px; border-radius: 8px; display: block; }
+#miniCover { width: 52px; height: 52px; border-radius: 8px; display: block; flex-shrink: 0; }
 .p-info { display: flex; flex-direction: column; min-width: 0; }
-.mini-title { font-size: 13px; font-weight: bold; color: var(--purple); }
-.mini-artist { font-size: 11px; color: var(--muted); }
+.mini-title { font-size: 13px; font-weight: bold; color: var(--purple); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-artist { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .icon-btn {
   background: transparent;
@@ -219,14 +230,15 @@ input[type="text"]:focus { border-color: var(--purple); }
   cursor: pointer;
   padding: 4px;
   border-radius: 6px;
+  user-select: none;
 }
 .icon-btn:hover { background: var(--card-hover); color: var(--text); }
 .icon-btn.on-cyan { color: var(--cyan); }
 .icon-btn.on-pink { color: var(--pink); }
 
 .p-center { flex-direction: column; gap: 4px; }
-.btn-row { display: flex; align-items: center; gap: 8px; }
-.btn.play { background: var(--purple); padding: 10px 22px; }
+.btn-row { display: flex; align-items: center; gap: 8px; justify-content: center; }
+.btn.play { background: var(--purple); padding: 10px 22px; user-select: none; }
 .btn.play:hover { background: var(--purple-hover); }
 .btn.play.paused { color: var(--text); }
 
@@ -253,9 +265,91 @@ input[type="range"]::-webkit-slider-thumb {
 
 @media (max-width: 900px) {
   .main { grid-template-columns: 1fr; }
-  .player { grid-template-columns: 1fr; }
+  .player {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 12px 16px;
+  }
   .track-head { grid-template-columns: 2fr 1fr; }
   .track-head .th-album { display: none; }
   .track-row { grid-template-columns: auto 2fr auto; }
   .track-row .t-album { display: none; }
+  .p-left { justify-content: flex-start; }
+  .p-right { justify-content: space-between; width: 100%; }
+  #volume { flex: 1; max-width: 200px; }
+}
+
+@media (max-width: 640px) {
+  .app {
+    padding: 12px 10px 0;
+    gap: 10px;
+  }
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .actions input[type="text"] {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .hero {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .cover-wrap {
+    width: 100%;
+    max-width: 270px;
+    height: auto;
+    aspect-ratio: 270 / 190;
+  }
+  #cover {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 270 / 190;
+  }
+  .telemetry {
+    justify-content: center;
+  }
+  .player {
+    padding: 10px 8px;
+    gap: 8px;
+  }
+  .btn-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    gap: 6px;
+  }
+  .btn.play {
+    padding: 9px 14px;
+    font-size: 12px;
+    min-width: 85px;
+    text-align: center;
+  }
+  .btn.card {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+  .icon-btn {
+    padding: 6px;
+    font-size: 17px;
+    min-width: 30px;
+    min-height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .seek-row {
+    gap: 6px;
+  }
 }

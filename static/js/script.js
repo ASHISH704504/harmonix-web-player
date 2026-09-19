@@ -32,6 +32,9 @@ const els = {
   spectrum: $("#spectrum"),
 };
 
+const audioEl = document.getElementById("audio") || new Audio();
+audioEl.preload = "metadata";
+
 // ---------- STATE ----------
 const state = {
   tracks: [],
@@ -42,7 +45,7 @@ const state = {
   shuffled: [],
   query: "",
   view: "ALL",
-  audio: new Audio(),
+  audio: audioEl,
 };
 
 const MODE_ICON = { normal: "[NORMAL]", repeat_one: "[REP1]", repeat_all: "[REPALL]", shuffle: "[SHUF]" };
@@ -187,25 +190,47 @@ function renderList() {
     row.appendChild(cols);
     row.appendChild(alb);
     row.appendChild(acts);
-    row.addEventListener("dblclick", () => playIndex(i));
+    row.addEventListener("click", () => playIndex(i));
     els.trackList.appendChild(row);
   });
 }
 
 // ---------- PLAYER ----------
 async function loadPlaylist() {
-  const res = await fetch("/api/tracks");
-  state.tracks = await res.json();
-  state.audio.src = state.tracks[0].url;
-  renderList();
-  updateHero(-1);
+  try {
+    const res = await fetch("/api/tracks");
+    state.tracks = await res.json();
+    if (state.tracks.length > 0) {
+      state.audio.src = state.tracks[0].url;
+    }
+    renderList();
+    updateHero(-1);
+  } catch (err) {
+    console.error("Failed to load tracks:", err);
+  }
 }
 
 function playIndex(i) {
+  if (i < 0 || i >= state.tracks.length) return;
   state.current = i;
-  state.audio.src = state.tracks[i].url;
-  state.audio.play();
-  state.playing = true;
+  const targetUrl = state.tracks[i].url;
+  const currentSrc = state.audio.getAttribute("src") || state.audio.src;
+  if (!currentSrc || (!currentSrc.endsWith(targetUrl) && currentSrc !== targetUrl)) {
+    state.audio.src = targetUrl;
+  }
+
+  const p = state.audio.play();
+  if (p !== undefined) {
+    p.then(() => {
+      state.playing = true;
+      updatePlayBtn();
+      renderList();
+    }).catch((err) => {
+      console.warn("Audio play blocked or error:", err);
+      state.playing = false;
+      updatePlayBtn();
+    });
+  }
   updateHero(i);
   renderList();
   updatePlayBtn();
@@ -213,19 +238,30 @@ function playIndex(i) {
 
 function togglePlay() {
   if (state.tracks.length === 0) return;
-  if (state.current === -1) state.current = 0;
-  if (state.audio.src !== state.tracks[state.current].url) {
-    state.audio.src = state.tracks[state.current].url;
+  if (state.current === -1) {
+    playIndex(0);
+    return;
   }
+
   if (state.audio.paused) {
-    state.audio.play();
-    state.playing = true;
+    const p = state.audio.play();
+    if (p !== undefined) {
+      p.then(() => {
+        state.playing = true;
+        updatePlayBtn();
+        renderList();
+      }).catch((err) => {
+        console.warn("Audio play blocked or error:", err);
+        state.playing = false;
+        updatePlayBtn();
+      });
+    }
   } else {
     state.audio.pause();
     state.playing = false;
+    updatePlayBtn();
+    renderList();
   }
-  updatePlayBtn();
-  renderList();
 }
 
 function next() {
@@ -354,8 +390,8 @@ function addFiles(fileList) {
   renderList();
 }
 
-state.audio.addEventListener("play", () => { state.playing = true; updatePlayBtn(); });
-state.audio.addEventListener("pause", () => { state.playing = false; updatePlayBtn(); });
+state.audio.addEventListener("play", () => { state.playing = true; updatePlayBtn(); renderList(); });
+state.audio.addEventListener("pause", () => { state.playing = false; updatePlayBtn(); renderList(); });
 state.audio.addEventListener("ended", () => {
   if (state.mode === "repeat_one") { state.audio.currentTime = 0; state.audio.play(); }
   else next();
