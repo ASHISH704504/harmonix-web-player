@@ -41,21 +41,16 @@ const state = {
   current: -1,
   playing: false,
   fav: new Set(),
-  mode: "normal",
-  shuffled: [],
+  shuffle: false,
+  repeat: "none", // "none" | "all" | "one"
   query: "",
   view: "ALL",
   audio: audioEl,
 };
 
-const MODE_ICON = { normal: "[NORMAL]", repeat_one: "[REP1]", repeat_all: "[REPALL]", shuffle: "[SHUF]" };
-function modeIndex() {
-  const modes = ["normal", "repeat_one", "repeat_all", "shuffle"];
-  return modes.indexOf(state.mode);
-}
+let autoAdvancing = false;
 
 // ---------- CANVAS ART ----------
-const GRAD = (ctx) => ctx.createLinearGradient(0, 0, 270, 190);
 function drawCover(canvas, title, seed) {
   const ctx = canvas.getContext("2d");
   const w = canvas.width, h = canvas.height;
@@ -81,6 +76,7 @@ function drawCover(canvas, title, seed) {
   const lines = title.toUpperCase().split(" ").slice(0, 3);
   lines.forEach((l, i) => ctx.fillText(l, w / 2, h / 2 - 20 + i * 24));
 }
+
 function drawMiniCover(canvas, title, seed) {
   const ctx = canvas.getContext("2d");
   const w = canvas.width, h = canvas.height;
@@ -150,7 +146,7 @@ function renderList() {
 
     const idx = document.createElement("span");
     idx.className = "idx" + (isNow ? " now" : "");
-    idx.textContent = isNow && state.playing ? "play" : String(i + 1).padStart(2, "0");
+    idx.textContent = isNow && state.playing ? "►" : String(i + 1).padStart(2, "0");
 
     const cols = document.createElement("div");
     cols.className = "cols";
@@ -215,22 +211,39 @@ function playIndex(i) {
   state.current = i;
   const targetUrl = state.tracks[i].url;
   const currentSrc = state.audio.getAttribute("src") || state.audio.src;
-  if (!currentSrc || (!currentSrc.endsWith(targetUrl) && currentSrc !== targetUrl)) {
+  const needsNewSrc = !currentSrc || (!currentSrc.endsWith(targetUrl) && currentSrc !== targetUrl);
+
+  if (needsNewSrc) {
     state.audio.src = targetUrl;
+    state.audio.load();
+  } else {
+    state.audio.currentTime = 0;
   }
 
-  const p = state.audio.play();
-  if (p !== undefined) {
-    p.then(() => {
-      state.playing = true;
-      updatePlayBtn();
-      renderList();
-    }).catch((err) => {
-      console.warn("Audio play blocked or error:", err);
-      state.playing = false;
-      updatePlayBtn();
-    });
+  const startPlayback = () => {
+    const p = state.audio.play();
+    if (p !== undefined) {
+      p.then(() => {
+        state.playing = true;
+        updatePlayBtn();
+        renderList();
+      }).catch((err) => {
+        console.warn("Audio play error/blocked:", err);
+        state.playing = false;
+        updatePlayBtn();
+      });
+    }
+  };
+
+  if (needsNewSrc && state.audio.readyState < 2) {
+    state.audio.addEventListener("canplay", function onCanPlay() {
+      state.audio.removeEventListener("canplay", onCanPlay);
+      startPlayback();
+    }, { once: true });
+  } else {
+    startPlayback();
   }
+
   updateHero(i);
   renderList();
   updatePlayBtn();
@@ -264,26 +277,99 @@ function togglePlay() {
   }
 }
 
-function next() {
+function getNextIndex() {
+  const len = state.tracks.length;
+  if (len <= 1) return 0;
+
+  if (state.shuffle) {
+    let rand;
+    do {
+      rand = Math.floor(Math.random() * len);
+    } while (rand === state.current && len > 1);
+    return rand;
+  }
+
+  if (state.repeat === "all") {
+    return (state.current + 1) % len;
+  }
+
+  // Normal mode
+  if (state.current + 1 < len) {
+    return state.current + 1;
+  }
+  return -1; // Reached end of playlist
+}
+
+function next(isAuto = false) {
   if (state.tracks.length === 0) return;
-  let idx;
-  if (state.mode === "repeat_one") idx = state.current;
-  else if (state.mode === "shuffle") idx = Math.floor(Math.random() * state.tracks.length);
-  else idx = (state.current + 1) % state.tracks.length;
-  playIndex(idx);
+  const nextIdx = getNextIndex();
+
+  if (nextIdx === -1) {
+    // End of playlist reached
+    if (isAuto) {
+      state.audio.pause();
+      state.audio.currentTime = 0;
+      state.playing = false;
+      updatePlayBtn();
+      renderList();
+      return;
+    } else {
+      // Manual click on next button wraps to first track
+      playIndex(0);
+      return;
+    }
+  }
+
+  playIndex(nextIdx);
 }
 
 function prev() {
   if (state.tracks.length === 0) return;
-  const idx = (state.current - 1 + state.tracks.length) % state.tracks.length;
-  playIndex(idx);
+  if (state.audio.currentTime > 3.0) {
+    state.audio.currentTime = 0;
+    state.audio.play().catch(console.warn);
+    return;
+  }
+
+  const len = state.tracks.length;
+  let prevIdx;
+  if (state.shuffle && len > 1) {
+    do {
+      prevIdx = Math.floor(Math.random() * len);
+    } while (prevIdx === state.current && len > 1);
+  } else {
+    prevIdx = (state.current - 1 + len) % len;
+  }
+  playIndex(prevIdx);
 }
 
-function cycleMode() {
-  const modes = ["normal", "repeat_one", "repeat_all", "shuffle"];
-  state.mode = modes[(modes.indexOf(state.mode) + 1) % modes.length];
-  els.repeatBtn.className = "icon-btn" + (state.mode.includes("repeat") ? " on-pink" : "");
-  els.shuffleBtn.className = "icon-btn" + (state.mode === "shuffle" ? " on-cyan" : "");
+function toggleShuffle() {
+  state.shuffle = !state.shuffle;
+  els.shuffleBtn.className = "icon-btn" + (state.shuffle ? " on-cyan" : "");
+  els.shuffleBtn.title = state.shuffle ? "Shuffle: ON" : "Shuffle: OFF";
+}
+
+function toggleRepeat() {
+  const modes = ["none", "all", "one"];
+  const nextMode = modes[(modes.indexOf(state.repeat) + 1) % modes.length];
+  state.repeat = nextMode;
+  updateRepeatBtn();
+}
+
+function updateRepeatBtn() {
+  if (state.repeat === "one") {
+    els.repeatBtn.className = "icon-btn on-pink";
+    els.repeatBtn.textContent = "\u{1F502}"; // 🔂
+    els.repeatBtn.title = "Repeat: ONE";
+  } else if (state.repeat === "all") {
+    els.repeatBtn.className = "icon-btn on-pink";
+    els.repeatBtn.textContent = "\u{1F501}"; // 🔁
+    els.repeatBtn.title = "Repeat: ALL";
+  } else {
+    els.repeatBtn.className = "icon-btn";
+    els.repeatBtn.textContent = "\u{1F501}"; // 🔁
+    els.repeatBtn.title = "Repeat: OFF";
+  }
 }
 
 function toggleFav(url) {
@@ -327,12 +413,28 @@ function updatePlayBtn() {
   els.playBtn.textContent = state.playing ? "[ \u23F8 PAUSE ]" : "[ \u25B6 PLAY ]";
 }
 
+function onTrackEnded() {
+  if (autoAdvancing) return;
+  autoAdvancing = true;
+  setTimeout(() => { autoAdvancing = false; }, 600);
+
+  if (state.repeat === "one") {
+    state.audio.currentTime = 0;
+    const p = state.audio.play();
+    if (p !== undefined) {
+      p.catch((err) => console.warn("Repeat playback error:", err));
+    }
+  } else {
+    next(true);
+  }
+}
+
 // ---------- EVENTS ----------
 els.playBtn.addEventListener("click", togglePlay);
-els.nextBtn.addEventListener("click", next);
+els.nextBtn.addEventListener("click", () => next(false));
 els.prevBtn.addEventListener("click", prev);
-els.repeatBtn.addEventListener("click", cycleMode);
-els.shuffleBtn.addEventListener("click", cycleMode);
+els.repeatBtn.addEventListener("click", toggleRepeat);
+els.shuffleBtn.addEventListener("click", toggleShuffle);
 els.favBtn.addEventListener("click", () => {
   if (state.current >= 0) toggleFav(state.tracks[state.current].url);
 });
@@ -386,21 +488,24 @@ function addFiles(fileList) {
       url,
     });
   });
-  state.audio.src = state.tracks[state.current >= 0 ? state.current : 0].url;
+  if (state.current === -1 && state.tracks.length > 0) {
+    state.audio.src = state.tracks[0].url;
+  }
   renderList();
 }
 
 state.audio.addEventListener("play", () => { state.playing = true; updatePlayBtn(); renderList(); });
 state.audio.addEventListener("pause", () => { state.playing = false; updatePlayBtn(); renderList(); });
-state.audio.addEventListener("ended", () => {
-  if (state.mode === "repeat_one") { state.audio.currentTime = 0; state.audio.play(); }
-  else next();
-});
+state.audio.addEventListener("ended", onTrackEnded);
 state.audio.addEventListener("timeupdate", () => {
   const d = state.audio.duration || 0;
   if (d > 0) {
     els.seek.value = (state.audio.currentTime / d) * 1000;
     updateRangeFill(els.seek);
+    // Safety check for auto-advance if ended doesn't fire
+    if (state.audio.currentTime >= d - 0.2 && state.playing && !autoAdvancing) {
+      onTrackEnded();
+    }
   }
   els.timeElapsed.textContent = fmtTime(state.audio.currentTime);
   els.timeTotal.textContent = fmtTime(state.audio.duration);
@@ -416,5 +521,6 @@ function updateRangeFill(el) {
 // ---------- INIT ----------
 updateRangeFill(els.seek);
 updateRangeFill(els.volume);
+updateRepeatBtn();
 loadPlaylist();
 animateSpectrum();
