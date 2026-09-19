@@ -22,17 +22,20 @@ body {
   color: var(--text);
   font-family: var(--mono);
   min-height: 100vh;
-  display: flex;
-  justify-content: center;
+  margin: 0;
+  padding: 0;
+  width: 100%;
 }
 
+/* ---------- DESKTOP: FULL WIDTH ---------- */
 .app {
   width: 100%;
-  max-width: 1240px;
+  max-width: 100%; /* Take full width on desktop */
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 16px 20px 0;
+  gap: 16px;
+  padding: 16px 28px 0;
+  min-height: 100vh;
 }
 
 /* ---------- HEADER ---------- */
@@ -41,7 +44,8 @@ body {
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
+  width: 100%;
 }
 .brand { display: flex; align-items: center; gap: 14px; }
 .logo { color: var(--purple); font-weight: bold; font-size: 18px; }
@@ -55,7 +59,7 @@ input[type="text"] {
   font-family: var(--mono);
   padding: 8px 12px;
   border-radius: 8px;
-  width: 230px;
+  width: 240px;
   font-size: 12px;
   outline: none;
 }
@@ -88,26 +92,31 @@ button, .pill, .track-row, .heart, .icon-btn {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* ---------- MAIN ---------- */
+/* ---------- MAIN LAYOUT ---------- */
 .main {
   display: grid;
-  grid-template-columns: 350px 1fr;
-  gap: 15px;
+  grid-template-columns: 360px 1fr;
+  gap: 18px;
   flex: 1;
+  width: 100%;
 }
 
-/* HERO */
+/* HERO CARD */
 .hero {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
-.cover-wrap { width: 270px; height: 190px; border-radius: 12px; overflow: hidden; }
+.cover-wrap { width: 270px; height: 190px; border-radius: 12px; overflow: hidden; margin: 0 auto; }
 #cover { width: 270px; height: 190px; display: block; }
 .hero-title { color: var(--purple); font-size: 18px; margin: 12px 0 2px; }
 .hero-artist { color: var(--pink); font-size: 13px; margin-bottom: 12px; }
-.telemetry { display: flex; gap: 8px; margin-bottom: 14px; }
+.telemetry { display: flex; gap: 8px; margin-bottom: 14px; justify-content: center; }
 .chip {
   background: var(--card);
   border-radius: 8px;
@@ -117,17 +126,18 @@ button, .pill, .track-row, .heart, .icon-btn {
 .chip.cyan { color: var(--cyan); }
 .chip.amber { color: var(--amber); }
 .viz-label { color: var(--muted); font-size: 11px; margin-bottom: 6px; }
-#spectrum { width: 100%; height: 60px; display: block; background: var(--card); border-radius: 10px; }
+#spectrum { width: 100%; max-width: 310px; height: 60px; display: block; background: var(--card); border-radius: 10px; }
 
-/* TRACKS */
+/* TRACKS SECTION */
 .tracks {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 15px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   min-width: 0;
+  width: 100%;
 }
 .pills { display: flex; gap: 8px; margin-bottom: 12px; }
 .pill {
@@ -172,8 +182,9 @@ button, .pill, .track-row, .heart, .icon-btn {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 8px 10px;
+  padding: 8px 12px;
   cursor: pointer;
+  transition: background 0.15s ease;
 }
 .track-row:hover { background: var(--card-hover); }
 .track-row.active { background: #242738; border-color: var(--purple); }
@@ -200,21 +211,22 @@ button, .pill, .track-row, .heart, .icon-btn {
 }
 .heart.fav { filter: drop-shadow(0 0 4px var(--pink)); }
 
-/* ---------- PLAYER BAR ---------- */
+/* ---------- PLAYER BAR (FULL WIDTH ON DESKTOP) ---------- */
 .player {
+  width: 100%;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
   display: grid;
   grid-template-columns: 1fr 2fr 1fr;
   align-items: center;
-  gap: 12px;
-  padding: 12px 20px;
+  gap: 16px;
+  padding: 14px 28px;
   position: sticky;
   bottom: 0;
   z-index: 100;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.45);
 }
 .p-left, .p-right, .p-center { display: flex; align-items: center; gap: 10px; }
 #miniCover { width: 52px; height: 52px; border-radius: 8px; display: block; flex-shrink: 0; }
@@ -228,19 +240,19 @@ button, .pill, .track-row, .heart, .icon-btn {
   color: var(--muted);
   font-size: 16px;
   cursor: pointer;
-  padding: 4px;
+  padding: 6px;
   border-radius: 6px;
   user-select: none;
+  transition: all 0.15s ease;
 }
 .icon-btn:hover { background: var(--card-hover); color: var(--text); }
-.icon-btn.on-cyan { color: var(--cyan); }
-.icon-btn.on-pink { color: var(--pink); }
+.icon-btn.on-cyan { color: var(--cyan); filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.6)); }
+.icon-btn.on-pink { color: var(--pink); filter: drop-shadow(0 0 6px rgba(236, 72, 153, 0.6)); }
 
-.p-center { flex-direction: column; gap: 4px; }
+.p-center { flex-direction: column; gap: 6px; }
 .btn-row { display: flex; align-items: center; gap: 8px; justify-content: center; }
-.btn.play { background: var(--purple); padding: 10px 22px; user-select: none; }
+.btn.play { background: var(--purple); padding: 10px 24px; user-select: none; }
 .btn.play:hover { background: var(--purple-hover); }
-.btn.play.paused { color: var(--text); }
 
 .seek-row { display: flex; align-items: center; gap: 10px; width: 100%; }
 .time { font-size: 11px; color: var(--cyan); width: 40px; text-align: center; }
@@ -263,66 +275,83 @@ input[type="range"]::-webkit-slider-thumb {
 #volume { flex: none; width: 110px; }
 #volume::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--pink) var(--fill, 0%), var(--border) var(--fill, 0%)); }
 
-@media (max-width: 900px) {
-  .main { grid-template-columns: 1fr; }
-  .player {
-    grid-template-columns: 1fr;
-    gap: 10px;
-    padding: 12px 16px;
+/* =======================================================
+   RESPONSIVE: SPECIFIC WIDTH ON MOBILE SCREENS (<= 768px)
+   ======================================================= */
+@media (max-width: 768px) {
+  body {
+    display: flex;
+    justify-content: center;
   }
-  .track-head { grid-template-columns: 2fr 1fr; }
-  .track-head .th-album { display: none; }
-  .track-row { grid-template-columns: auto 2fr auto; }
-  .track-row .t-album { display: none; }
-  .p-left { justify-content: flex-start; }
-  .p-right { justify-content: space-between; width: 100%; }
-  #volume { flex: 1; max-width: 200px; }
-}
 
-@media (max-width: 640px) {
+  /* Specific mobile container width */
   .app {
-    padding: 12px 10px 0;
-    gap: 10px;
+    width: 100%;
+    max-width: 440px; /* SPECIFIC WIDTH ON MOBILE */
+    margin: 0 auto;
+    padding: 12px 12px 0;
+    gap: 12px;
   }
+
+  .main {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* Sticky player with matching mobile container width */
+  .player {
+    width: 100%;
+    max-width: 440px; /* SPECIFIC WIDTH ON MOBILE */
+    margin: 0 auto;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 10px 10px;
+    border-radius: 12px 12px 0 0;
+  }
+
   .header {
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
   }
+
   .actions {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
   }
+
   .actions input[type="text"] {
     width: 100%;
     box-sizing: border-box;
   }
+
   .hero {
     padding: 14px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
   }
+
   .cover-wrap {
     width: 100%;
     max-width: 270px;
     height: auto;
     aspect-ratio: 270 / 190;
   }
+
   #cover {
     width: 100%;
     height: auto;
     aspect-ratio: 270 / 190;
   }
-  .telemetry {
-    justify-content: center;
-  }
-  .player {
-    padding: 10px 8px;
-    gap: 8px;
-  }
+
+  .track-head { grid-template-columns: 2fr 1fr; }
+  .track-head .th-album { display: none; }
+  .track-row { grid-template-columns: auto 2fr auto; }
+  .track-row .t-album { display: none; }
+
+  .p-left { justify-content: flex-start; }
+  .p-right { justify-content: space-between; width: 100%; }
+  #volume { flex: 1; max-width: 180px; }
+
   .btn-row {
     display: flex;
     justify-content: center;
@@ -330,16 +359,19 @@ input[type="range"]::-webkit-slider-thumb {
     width: 100%;
     gap: 6px;
   }
+
   .btn.play {
     padding: 9px 14px;
     font-size: 12px;
     min-width: 85px;
     text-align: center;
   }
+
   .btn.card {
     padding: 8px 10px;
     font-size: 11px;
   }
+
   .icon-btn {
     padding: 6px;
     font-size: 17px;
@@ -349,6 +381,7 @@ input[type="range"]::-webkit-slider-thumb {
     align-items: center;
     justify-content: center;
   }
+
   .seek-row {
     gap: 6px;
   }

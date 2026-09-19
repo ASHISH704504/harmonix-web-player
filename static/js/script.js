@@ -42,7 +42,7 @@ const state = {
   playing: false,
   fav: new Set(),
   shuffle: false,
-  repeat: "none", // "none" | "all" | "one"
+  repeat: "all", // "all" | "one" | "none" (default "all" for continuous playback)
   query: "",
   view: "ALL",
   audio: audioEl,
@@ -139,9 +139,10 @@ function renderList() {
   );
 
   tracks.forEach((t, i) => {
+    const originalIndex = state.tracks.indexOf(t);
     const row = document.createElement("div");
-    row.className = "track-row" + (i === state.current ? " active" : "");
-    const isNow = i === state.current;
+    row.className = "track-row" + (originalIndex === state.current ? " active" : "");
+    const isNow = originalIndex === state.current;
     const isFav = state.fav.has(t.url);
 
     const idx = document.createElement("span");
@@ -186,7 +187,7 @@ function renderList() {
     row.appendChild(cols);
     row.appendChild(alb);
     row.appendChild(acts);
-    row.addEventListener("click", () => playIndex(i));
+    row.addEventListener("click", () => playIndex(originalIndex));
     els.trackList.appendChild(row);
   });
 }
@@ -215,33 +216,21 @@ function playIndex(i) {
 
   if (needsNewSrc) {
     state.audio.src = targetUrl;
-    state.audio.load();
-  } else {
-    state.audio.currentTime = 0;
   }
+  state.audio.currentTime = 0;
 
-  const startPlayback = () => {
-    const p = state.audio.play();
-    if (p !== undefined) {
-      p.then(() => {
-        state.playing = true;
-        updatePlayBtn();
-        renderList();
-      }).catch((err) => {
-        console.warn("Audio play error/blocked:", err);
-        state.playing = false;
-        updatePlayBtn();
-      });
-    }
-  };
-
-  if (needsNewSrc && state.audio.readyState < 2) {
-    state.audio.addEventListener("canplay", function onCanPlay() {
-      state.audio.removeEventListener("canplay", onCanPlay);
-      startPlayback();
-    }, { once: true });
-  } else {
-    startPlayback();
+  const p = state.audio.play();
+  if (p !== undefined) {
+    p.then(() => {
+      state.playing = true;
+      updatePlayBtn();
+      renderList();
+    }).catch((err) => {
+      console.warn("Audio play blocked or error:", err);
+      state.playing = false;
+      updatePlayBtn();
+      renderList();
+    });
   }
 
   updateHero(i);
@@ -285,41 +274,20 @@ function getNextIndex() {
     let rand;
     do {
       rand = Math.floor(Math.random() * len);
-    } while (rand === state.current && len > 1);
+    } while (rand === state.current);
     return rand;
   }
 
-  if (state.repeat === "all") {
-    return (state.current + 1) % len;
+  if (state.repeat === "one") {
+    return state.current >= 0 ? state.current : 0;
   }
 
-  // Normal mode
-  if (state.current + 1 < len) {
-    return state.current + 1;
-  }
-  return -1; // Reached end of playlist
+  return (state.current + 1) % len;
 }
 
 function next(isAuto = false) {
   if (state.tracks.length === 0) return;
   const nextIdx = getNextIndex();
-
-  if (nextIdx === -1) {
-    // End of playlist reached
-    if (isAuto) {
-      state.audio.pause();
-      state.audio.currentTime = 0;
-      state.playing = false;
-      updatePlayBtn();
-      renderList();
-      return;
-    } else {
-      // Manual click on next button wraps to first track
-      playIndex(0);
-      return;
-    }
-  }
-
   playIndex(nextIdx);
 }
 
@@ -336,7 +304,7 @@ function prev() {
   if (state.shuffle && len > 1) {
     do {
       prevIdx = Math.floor(Math.random() * len);
-    } while (prevIdx === state.current && len > 1);
+    } while (prevIdx === state.current);
   } else {
     prevIdx = (state.current - 1 + len) % len;
   }
@@ -350,7 +318,7 @@ function toggleShuffle() {
 }
 
 function toggleRepeat() {
-  const modes = ["none", "all", "one"];
+  const modes = ["all", "one", "none"];
   const nextMode = modes[(modes.indexOf(state.repeat) + 1) % modes.length];
   state.repeat = nextMode;
   updateRepeatBtn();
@@ -502,8 +470,8 @@ state.audio.addEventListener("timeupdate", () => {
   if (d > 0) {
     els.seek.value = (state.audio.currentTime / d) * 1000;
     updateRangeFill(els.seek);
-    // Safety check for auto-advance if ended doesn't fire
-    if (state.audio.currentTime >= d - 0.2 && state.playing && !autoAdvancing) {
+    // Safety check for auto-advance if ended event is missed
+    if (state.audio.currentTime >= d - 0.25 && state.playing && !autoAdvancing) {
       onTrackEnded();
     }
   }
